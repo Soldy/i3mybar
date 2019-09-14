@@ -7,39 +7,49 @@ console.log('{"version": 1, "stop_signal": 10, "cont_signal": 12, "click_events"
 console.log('[');
     
 
-function battery(){
-    let color = "#ffffff";
-    let full = fs.readFileSync(
-            '/sys/class/power_supply/BAT0/charge_full'
-        );
-    let now = fs.readFileSync(
-            '/sys/class/power_supply/BAT0/charge_now'
-        );
-    let stat = fs.readFileSync(
-            '/sys/class/power_supply/BAT0/status'
-        );
-    let  alarm = fs.readFileSync(
-            '/sys/class/power_supply/BAT0/status'
-        );
-    let uevent = fs.readFileSync(
+
+const batteryClass = function(){
+    this.db={
+         "charge":0,
+         "batteryStatus":"Full"
+    }
+    this.container={}
+    this.charge = function(){
+         let color = "#ffffff";
+         if (this.container['POWER_SUPPLY_STATUS'] === "Discharging")
+             color="#ffff00";
+         if ( 20 > this.db.charge )
+             color="#ff0000";
+        return {
+             "full_text":this.db.charge.toString()+"%",
+             "color":  color
+        };
+    }
+    let uevent = [];
+    let that = this;
+    let read=function(){
+        uevent = fs.readFileSync(
             '/sys/class/power_supply/BAT0/uevent'
-        );
-    let container={};
-    for (let ev of uevent.toString().split("\n"))
-        if (typeof ev.split("=")[1] !== "undefined")
-            container[ev.split("=")[0]] = ev.split("=")[1];
-    if (container['POWER_SUPPLY_STATUS'] === "Discharging")
-        color="#ffff00";
-    let charg = parseInt(
-            (parseInt(now)*100)/parseInt(full));
-    if ( 20 > charg )
-        color="#ff0000";
-    return {
-        "full_text":charg.toString()+"%",
-        "color":  color
-    };
+        ).toString().split("\n");
+        for (let ev of uevent)
+            if (typeof ev.split("=")[1] !== "undefined")
+                that.container[ev.split("=")[0]] = ev.split("=")[1];
+            that.db['charge'] = parseInt(
+                (parseInt(
+                    that.container['POWER_SUPPLY_CHARGE_NOW']
+                 )*100)/parseInt(
+            that.container['POWER_SUPPLY_CHARGE_FULL']));
+    }
+    setInterval(function(){
+        try{
+            read();
+        }catch(e){
+
+        }
+    }, 3000);
 }
 
+let battery = new batteryClass();
 
 function ukTime (){
     return (new Intl.DateTimeFormat([], {
@@ -75,15 +85,22 @@ function lTime (){
 
 setInterval(()=>{
     let out = []
-    out.push(battery());
-    out.push({
-        "full_text": ukTime(),
-        "color": "#eeeeee"
-    });
-    out.push({
-         "full_text": starDate(),
-         "color": "#eeeeee"
-    });
+    try{
+        out.push(battery.charge());
+        out.push({
+            "full_text": ukTime(),
+             "color": "#eeeeee"
+         });
+         out.push({
+             "full_text": starDate(),
+             "color": "#eeeeee"
+         });
+    }catch(e){
+         out.push({
+            "full_text": e.toString(),
+            "color": "#eeeeee"
+        });
+    }
     console.log(JSON.stringify(out)+',');
 },1000);
 
