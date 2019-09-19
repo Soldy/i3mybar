@@ -51,19 +51,37 @@ const batteryClass = function(){
 
 let battery = new batteryClass();
 
-function ukTime (){
-    return (new Intl.DateTimeFormat([], {
-        timeZone: 'Europe/London',
-        hour: 'numeric', minute: 'numeric', second: 'numeric',
-     })).format(new Date());
-}
-
-function losTime (){
-     return (new Intl.DateTimeFormat([], {
+const timeClass = function(){
+     this.los = function(){
+         return {
+            "full_text": ukFormat.format(Date.now()),
+             "color": "#eeeeee"
+         }
+     }
+     this.uk = function(){
+         return {
+            "full_text": ukFormat.format(Date.now()),
+             "color": "#eeeeee"
+         }
+     }
+     function starDate(){
+         return
+             (Math.floor(((100000/86400)*(Date.now()))/1000)/100000)
+                 .toFixed(4)
+                 .toString();
+     }
+     let losFormat = new Intl.DateTimeFormat([], {
          timeZone: 'America/Los_Angeles',
          hour: 'numeric', minute: 'numeric', second: 'numeric',
-     })).format(new Date());
+     });
+     let ukFormat = new Intl.DateTimeFormat([], {
+        timeZone: 'Europe/London',
+        hour: 'numeric', minute: 'numeric', second: 'numeric',
+     });
 }
+
+var timer =  new timeClass();
+
 
 function fTime (){
     return (new Intl.DateTimeFormat([], {
@@ -72,10 +90,6 @@ function fTime (){
     (+new Date)).getTime());
 }
 
-function starDate(){
-    return (Math.floor(((100000/86400)*(new
-         Date()))/1000)/100000).toFixed(4).toString();
-    }
 
 function lTime (){
     return (new Intl.DateTimeFormat([], {
@@ -87,14 +101,8 @@ setInterval(()=>{
     let out = []
     try{
         out.push(battery.charge());
-        out.push({
-            "full_text": ukTime(),
-             "color": "#eeeeee"
-         });
-         out.push({
-             "full_text": starDate(),
-             "color": "#eeeeee"
-         });
+        out.push(timer.uk());
+         out.push(timer.starDate());
     }catch(e){
          out.push({
             "full_text": e.toString(),
