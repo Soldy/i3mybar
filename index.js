@@ -3,7 +3,8 @@
 "use strict"
 
 const fs = require('fs');
-console.log('{"version": 1, "stop_signal": 10, "cont_signal": 12, "click_events": true }');
+//console.log('{"version": 1, "stop_signal": 10, "cont_signal": 12, "click_events": true }');
+console.log('{"version": 1}');
 console.log('[');
     
 
@@ -16,10 +17,11 @@ const batteryClass = function(){
     this.container={}
     this.charge = function(){
          let color = "#ffffff";
-         if (this.container['POWER_SUPPLY_STATUS'] === "Discharging")
-             color="#ffff00";
-         if ( 20 > this.db.charge )
-             color="#ff0000";
+         if (this.container['POWER_SUPPLY_STATUS'] === "Discharging"){
+              color="#ffff00";
+              if ( 20 > this.db.charge )
+                   color="#ff0000";
+        }=
         return {
              "full_text":this.db.charge.toString()+"%",
              "color":  color
@@ -64,7 +66,7 @@ const timeClass = function(){
              "color": "#eeeeee"
          }
      }
-     function starDate(){
+     this.starDate = function(){
          return
              (Math.floor(((100000/86400)*(Date.now()))/1000)/100000)
                  .toFixed(4)
@@ -102,7 +104,7 @@ setInterval(()=>{
     try{
         out.push(battery.charge());
         out.push(timer.uk());
-         out.push(timer.starDate());
+        out.push(timer.starDate());
     }catch(e){
          out.push({
             "full_text": e.toString(),
