@@ -6,9 +6,18 @@
 #include <math.h>
 
 
+FILE *fpf;
+FILE *fpn;
+int now;
+int full;
+int out = 0;
+float current;
+float charge;
+time_t rawtime;
+
 void dateTime(){
     printf("{");
-    time_t rawtime = time(NULL);
+    rawtime = time(NULL);
     if (rawtime == -1) {
         printf("Err");
     }
@@ -25,8 +34,6 @@ void dateTime(){
 
 
 void temp(){
-    int now;
-    FILE *fpf;
     printf("{");
     fpf = fopen("/sys/class/hwmon/hwmon4/temp2_input", "r");
     if((fpf == NULL)){
@@ -34,27 +41,23 @@ void temp(){
     }else{
         fscanf(fpf,"%d", &now);
         fclose(fpf);
-        float full = ((float) now / (float) 1000);
-        if ( (float) 50 > full ){
+        current = ((float) now / (float) 1000);
+        if ( (float) 50 > current ){
             printf("\"color\":\"#00ff00\",");
-        } else if ( (float) 55 > full ){
+        } else if ( (float) 55 > current ){
             printf("\"color\":\"#ffff00\",");
-        } else if ( (float) 60 > full ){
+        } else if ( (float) 60 > current ){
             printf("\"color\":\"#ff9900\",");
         }else{
             printf("\"color\":\"#ff0000\",");
         }
         printf("\"full_text\":\"");
-        printf("%.2f", full);
+        printf("%.2f", current);
         printf("\"");
     }
     printf("}");
 }
 void battery(){
-    int now;
-    int full;
-    FILE *fpf;
-    FILE *fpn;
     printf("{");
     fpf = fopen("/sys/class/power_supply/BAT0/charge_full", "r");
     fpn = fopen("/sys/class/power_supply/BAT0/charge_now", "r");
@@ -65,7 +68,7 @@ void battery(){
         fscanf(fpn,"%d", &now);
         fclose(fpf);
         fclose(fpn);
-        float charge = ((float) now / (float) full)*100;
+        charge = ((float) now / (float) full)*100;
         if ( charge > (float) 95 ){
             printf("\"color\":\"#00ff00\",");
         } else if ( (float)10 > charge ){
@@ -84,7 +87,6 @@ void battery(){
 
 
 int main(){
-    int out = 0;
     printf("{\"version\": 1}\n[\n");
     while(out == 0){
         printf("[");
