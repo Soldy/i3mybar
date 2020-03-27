@@ -9,11 +9,12 @@
 FILE *fpf;
 FILE *fpn;
 char color;
-int now;
-int full;
+int batteryNow;
+int batteryFull;
+float batteryCharge;
 int out = 0;
-float current;
-float charge;
+int tempNow;
+float tempCurrent;
 float cpuUsage, lastCpuUsage;
 float memUsage, lastMemUsage;
 time_t rawtime;
@@ -25,7 +26,9 @@ long int sum = 0, idle, lastSum = 0,lastIdle = 0;
 long double idleFraction;
 struct sysinfo sys_info;
 
-void cpu(){
+
+
+void cpuDetect(){
     fpf = fopen("/proc/stat","r");
     fgets(str,100,fpf);
     fclose(fpf);
@@ -45,6 +48,9 @@ void cpu(){
     lastIdle = idle;
     lastSum = sum;
     lastCpuUsage = cpuUsage;
+}
+
+void cpuWrite(){
     printf("{");
     if(10 > cpuUsage){
        printf("\"color\":\"#0000aa\",");
@@ -68,9 +74,11 @@ void cpu(){
     printf("}");
 }
 
-void mem(){
+void memDetect(){
     sysinfo(&sys_info);
     memUsage = 100.00-(100.00*(float)((float)sys_info.freeram/(float)sys_info.totalram));
+}
+void memWrite(){
     printf("{");
     if(10 > memUsage){
        printf("\"color\":\"#0000aa\",");
@@ -78,9 +86,9 @@ void mem(){
        printf("\"color\":\"#0000ff\",");
     }else if(40 > memUsage){
        printf("\"color\":\"#00ff00\",");
-    }else if(50 > memUsage){
+    }else if(60 > memUsage){
        printf("\"color\":\"#ffff00\",");
-    }else if(70 > memUsage){
+    }else if(85 > memUsage){
        printf("\"color\":\"#ff9900\",");
     }else{
        printf("\"color\":\"#ff0000\",");
@@ -112,69 +120,80 @@ void dateTime(){
 }
 
 
-void temp(){
-    printf("{");
+void tempDetect(){
     fpf = fopen("/sys/class/hwmon/hwmon4/temp2_input", "r");
     if((fpf == NULL)){
         printf("Err");
     }else{
-        fscanf(fpf,"%d", &now);
+        fscanf(fpf,"%d", &tempNow);
         fclose(fpf);
-        current = ((float) now / (float) 1000);
-        if ( (float) 50 > current ){
+        tempCurrent = ((float) tempNow / (float) 1000);
+    }
+}
+
+void tempWrite(){
+    printf("{");
+        if ( (float) 50 > tempCurrent ){
             printf("\"color\":\"#00ff00\",");
-        } else if ( (float) 55 > current ){
+        } else if ( (float) 55 > tempCurrent ){
             printf("\"color\":\"#ffff00\",");
-        } else if ( (float) 60 > current ){
+        } else if ( (float) 60 > tempCurrent ){
             printf("\"color\":\"#ff9900\",");
         }else{
             printf("\"color\":\"#ff0000\",");
         }
         printf("\"full_text\":\"");
-        printf("%.2f℃", current);
+        printf("%.2f℃", tempCurrent);
         printf("\"");
-    }
-    printf("}");
-}
-void battery(){
-    printf("{");
-    fpf = fopen("/sys/class/power_supply/BAT0/charge_full", "r");
-    fpn = fopen("/sys/class/power_supply/BAT0/charge_now", "r");
-    if((fpf == NULL) && (fpn == NULL)){
-        printf("\"color\":\"#ff0000\",\"full_text\":\"Err\"");
-    }else{
-        fscanf(fpf,"%d", &full);
-        fscanf(fpn,"%d", &now);
-        fclose(fpf);
-        fclose(fpn);
-        charge = ((float) now / (float) full)*100;
-        if ( charge > (float) 95 ){
-            printf("\"color\":\"#00ff00\",");
-        } else if ( (float)10 > charge ){
-            printf("\"color\":\"#ff0000\",");
-        } else if ( (float)25 > charge ){
-            printf("\"color\":\"#ffff00\",");
-        }else{
-            printf("\"color\":\"#00ffff\",");
-        }
-        printf("\"full_text\":\"");
-        printf("%.2f\%\"", charge);
-    }
+
     printf("}");
 }
 
+void batteryDetect(){
+    fpf = fopen("/sys/class/power_supply/BAT0/charge_full", "r");
+    fpn = fopen("/sys/class/power_supply/BAT0/charge_now", "r");
+    if((fpf == NULL) && (fpn == NULL)){
+        batteryCharge = -1.00;
+    }else{
+        fscanf(fpf,"%d", &batteryFull);
+        fscanf(fpn,"%d", &batteryNow);
+        fclose(fpf);
+        fclose(fpn);
+        batteryCharge = ((float) batteryNow / (float) batteryFull)*100;
+    }
+}
+
+void batteryWrite(){
+    printf("{");
+    if ( batteryCharge > (float) 95 ){
+        printf("\"color\":\"#00ff00\",");
+    } else if ( (float)10 > batteryCharge ){
+        printf("\"color\":\"#ff0000\",");
+    } else if ( (float)25 > batteryCharge ){
+        printf("\"color\":\"#ffff00\",");
+    }else{
+        printf("\"color\":\"#00ffff\",");
+    }
+    printf("\"full_text\":\"");
+    printf("%.2f\%\"", batteryCharge);
+    printf("}");
+}
 
 int main(){
     printf("{\"version\": 1}\n[\n");
     while(out == 0){
+        batteryDetect();
+        cpuDetect();
+        tempDetect();
+        memDetect();
         printf("[");
-        battery();
+        batteryWrite();
         printf(",");
-        cpu();
+        cpuWrite();
         printf(",");
-        mem();
+        memWrite();
         printf(",");
-        temp();
+        tempWrite();
         printf(",");
         dateTime();
         printf("],\n");
