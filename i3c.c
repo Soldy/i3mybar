@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <math.h>
-
+#include <sys/sysinfo.h>
 
 FILE *fpf;
 FILE *fpn;
@@ -15,6 +15,7 @@ int out = 0;
 float current;
 float charge;
 float cpuUsage, lastCpuUsage;
+float memUsage, lastMemUsage;
 time_t rawtime;
 char str[100];
 const char d[2] = " ";
@@ -22,6 +23,7 @@ char* token;
 int i = 0,times,lag;
 long int sum = 0, idle, lastSum = 0,lastIdle = 0;
 long double idleFraction;
+struct sysinfo sys_info;
 
 void cpu(){
     fpf = fopen("/proc/stat","r");
@@ -66,6 +68,32 @@ void cpu(){
     printf("}");
 }
 
+void mem(){
+    sysinfo(&sys_info);
+    memUsage = 100.00-(100.00*(float)((float)sys_info.freeram/(float)sys_info.totalram));
+    printf("{");
+    if(10 > memUsage){
+       printf("\"color\":\"#0000aa\",");
+    }else if(20 > memUsage){
+       printf("\"color\":\"#0000ff\",");
+    }else if(40 > memUsage){
+       printf("\"color\":\"#00ff00\",");
+    }else if(50 > memUsage){
+       printf("\"color\":\"#ffff00\",");
+    }else if(70 > memUsage){
+       printf("\"color\":\"#ff9900\",");
+    }else{
+       printf("\"color\":\"#ff0000\",");
+    }
+    printf("\"full_text\":");
+    if(10 > memUsage){
+       printf("\" %.2f\%\"", memUsage);
+    }else{
+       printf("\"%.2f\%\"", memUsage);
+    }
+    printf("}");
+
+}
 
 void dateTime(){
     printf("{");
@@ -103,7 +131,7 @@ void temp(){
             printf("\"color\":\"#ff0000\",");
         }
         printf("\"full_text\":\"");
-        printf("%.2f", current);
+        printf("%.2f℃", current);
         printf("\"");
     }
     printf("}");
@@ -130,8 +158,7 @@ void battery(){
             printf("\"color\":\"#00ffff\",");
         }
         printf("\"full_text\":\"");
-        printf("%.2f", charge);
-        printf("\"");
+        printf("%.2f\%\"", charge);
     }
     printf("}");
 }
@@ -144,6 +171,8 @@ int main(){
         battery();
         printf(",");
         cpu();
+        printf(",");
+        mem();
         printf(",");
         temp();
         printf(",");
