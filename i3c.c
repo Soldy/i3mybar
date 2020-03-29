@@ -24,7 +24,14 @@ char* token;
 int i = 0,times,lag;
 long int sum = 0, idle, lastSum = 0,lastIdle = 0;
 long double idleFraction;
+
 struct sysinfo sys_info;
+
+
+//char moveIcons[4][4]={"◜","◝","◞","◟"};
+//char moveIcons[4][4]={"◴","◷","◶","◵"};
+char moveIcons[4][4]={"▘","▝","▗","▖"};
+int moveIconI=0;
 
 
 
@@ -67,9 +74,23 @@ void cpuWrite(){
     }
     printf("\"full_text\":");
     if(10 > cpuUsage){
-       printf("\" %.2f\%\"", cpuUsage);
+       printf("\"▁  %.2f\% ▁\"", cpuUsage);
+    }else if(20 > cpuUsage){
+       printf("\"▂ %.2f\% ▂\"", cpuUsage);
+    }else if(40 > cpuUsage){
+       printf("\"▃ %.2f\% ▃\"", cpuUsage);
+    }else if(60 > cpuUsage){
+       printf("\"▄ %.2f\% ▄\"", cpuUsage);
+    }else if(80 > cpuUsage){
+       printf("\"▅ %.2f\% ▅\"", cpuUsage);
+    }else if(90 > cpuUsage){
+       printf("\"▆ %.2f\% ▆\"", cpuUsage);
+    }else if(100 > cpuUsage){
+       printf("\"▇ %.2f\% ▇\"", cpuUsage);
+    }else if(cpuUsage >= 100.00){
+       printf("\"█%.2f\% █\"", cpuUsage);
     }else{
-       printf("\"%.2f\%\"", cpuUsage);
+       printf("\"▁  %.2f\%▁\"", cpuUsage);
     }
     printf("}");
 }
@@ -95,9 +116,23 @@ void memWrite(){
     }
     printf("\"full_text\":");
     if(10 > memUsage){
-       printf("\" %.2f\%\"", memUsage);
+       printf("\"▁  %.2f\%▁\"", memUsage);
+    }else if(20 > memUsage){
+       printf("\"▂ %.2f\% ▂\"", memUsage);
+    }else if(40 > memUsage){
+       printf("\"▃ %.2f\% ▃\"", memUsage);
+    }else if(60 > memUsage){
+       printf("\"▄ %.2f\% ▄\"", memUsage);
+    }else if(80 > memUsage){
+       printf("\"▅ %.2f\% ▅\"", memUsage);
+    }else if(90 > memUsage){
+       printf("\"▆ %.2f\% ▆\"", memUsage);
+    }else if(100 > memUsage){
+       printf("\"▇ %.2f\% ▇\"", memUsage);
+    }else if(memUsage >= 100.00){
+       printf("\"█%.2f\% █\"", memUsage);
     }else{
-       printf("\"%.2f\%\"", memUsage);
+       printf("\"▁  %.2f\%▁\"", memUsage);
     }
     printf("}");
 
@@ -105,6 +140,9 @@ void memWrite(){
 
 void dateTime(){
     printf("{");
+    moveIconI++;
+    if(moveIconI==4)
+        moveIconI=0;
     rawtime = time(NULL);
     if (rawtime == -1) {
         printf("Err");
@@ -114,7 +152,7 @@ void dateTime(){
         printf("Err");
     }
     printf("\"full_text\":");
-    printf("\"%02d:%02d:%02d\",", ptm->tm_hour, ptm->tm_min, ptm->tm_sec);
+    printf("\" %s %02d:%02d:%02d %s \",", moveIcons[moveIconI], ptm->tm_hour, ptm->tm_min, ptm->tm_sec, moveIcons[moveIconI]);
     printf("\"color\":\"#ffffff\"");
     printf("}");
 }
@@ -198,7 +236,7 @@ int main(){
         dateTime();
         printf("],\n");
         fflush(stdout);
-        sleep(1);
+        usleep(100000);
     }
 }
 
