@@ -6,6 +6,15 @@
 #include <math.h>
 #include <sys/sysinfo.h>
 
+char * tempFile = "/sys/class/hwmon/hwmon4/temp2_input";
+//char tempFile = fopen("/sys/class/hwmon/hwmon0/temp1_input";
+
+char * batteryFullFile ="/sys/class/power_supply/BAT0/charge_full";
+char *  batteryNowFile  = "/sys/class/power_supply/BAT0/charge_now";
+//char batteryFullFile ="/sys/class/power_supply/BAT0/energy_full";
+//char batteryNowFile  = "/sys/class/power_supply/BAT0/energy_now";
+
+
 FILE *fpf;
 FILE *fpn;
 char color;
@@ -30,10 +39,64 @@ struct sysinfo sys_info;
 
 //char moveIcons[4][4]={"◜","◝","◞","◟"};
 //char moveIcons[4][4]={"◴","◷","◶","◵"};
-char moveIcons[4][4]={"▘","▝","▗","▖"};
+char moveIcons[17][4]={"⠁","⠃","⠇","⡇","⡏","⡟","⡿","⣿","⣾","⣼","⣸","⢸","⢰","⢠","⢀"," "};
+int moveIconMax=15;
+//char moveIcons[4][4]={"▘","▝","▗","▖"};
+//int moveIconMax=4;
 int moveIconI=0;
 
+void matrixTimer(){
+    moveIconI++;
+    if(moveIconI==moveIconMax)
+        moveIconI=0;
+}
 
+void matrix(){
+    printf("{");
+    printf("\"full_text\":");
+    printf("\"%s%s  \",", moveIcons[moveIconI], moveIcons[moveIconI]);
+    printf("\"color\":\"#00ff00\",\"separator\": false");
+    printf("}");
+}
+
+void printPercentage(char * name, float percent){
+    printf("{");
+    if(10 > percent){
+       printf("\"color\":\"#0000aa\",");
+    }else if(20 > percent){
+       printf("\"color\":\"#0000ff\",");
+    }else if(40 > percent){
+       printf("\"color\":\"#00ff00\",");
+    }else if(60 > percent){
+       printf("\"color\":\"#ffff00\",");
+    }else if(85 > percent){
+       printf("\"color\":\"#ff9900\",");
+    }else{
+       printf("\"color\":\"#ff0000\",");
+    }
+    printf("\"name\":\"%s\",", name);
+    printf("\"full_text\":");
+    if(10 > percent){
+       printf("\"▁  %.2f\% ▁\"", percent);
+    }else if(20 > percent){
+       printf("\"▂ %.2f\% ▂\"", percent);
+    }else if(40 > percent){
+       printf("\"▃ %.2f\% ▃\"", percent);
+    }else if(60 > percent){
+       printf("\"▄ %.2f\% ▄\"", percent);
+    }else if(80 > percent){
+       printf("\"▅ %.2f\% ▅\"", percent);
+    }else if(90 > percent){
+       printf("\"▆ %.2f\% ▆\"", percent);
+    }else if(100 > percent){
+       printf("\"▇ %.2f\% ▇\"", percent);
+    }else if(percent >= 100.00){
+       printf("\"█%.2f\% █\"", percent);
+    }else{
+       printf("\"▁  %.2f\%▁\"", percent);
+    }
+    printf("}");
+}
 
 void cpuDetect(){
     fpf = fopen("/proc/stat","r");
@@ -58,91 +121,19 @@ void cpuDetect(){
 }
 
 void cpuWrite(){
-    printf("{");
-    if(10 > cpuUsage){
-       printf("\"color\":\"#0000aa\",");
-    }else if(20 > cpuUsage){
-       printf("\"color\":\"#0000ff\",");
-    }else if(40 > cpuUsage){
-       printf("\"color\":\"#00ff00\",");
-    }else if(50 > cpuUsage){
-       printf("\"color\":\"#ffff00\",");
-    }else if(70 > cpuUsage){
-       printf("\"color\":\"#ff9900\",");
-    }else{
-       printf("\"color\":\"#ff0000\",");
-    }
-    printf("\"full_text\":");
-    if(10 > cpuUsage){
-       printf("\"▁  %.2f\% ▁\"", cpuUsage);
-    }else if(20 > cpuUsage){
-       printf("\"▂ %.2f\% ▂\"", cpuUsage);
-    }else if(40 > cpuUsage){
-       printf("\"▃ %.2f\% ▃\"", cpuUsage);
-    }else if(60 > cpuUsage){
-       printf("\"▄ %.2f\% ▄\"", cpuUsage);
-    }else if(80 > cpuUsage){
-       printf("\"▅ %.2f\% ▅\"", cpuUsage);
-    }else if(90 > cpuUsage){
-       printf("\"▆ %.2f\% ▆\"", cpuUsage);
-    }else if(100 > cpuUsage){
-       printf("\"▇ %.2f\% ▇\"", cpuUsage);
-    }else if(cpuUsage >= 100.00){
-       printf("\"█%.2f\% █\"", cpuUsage);
-    }else{
-       printf("\"▁  %.2f\%▁\"", cpuUsage);
-    }
-    printf("}");
+    printPercentage("cpu", cpuUsage);
 }
 
 void memDetect(){
     sysinfo(&sys_info);
-    memUsage = 100.00-(100.00*(float)((float)sys_info.freeram/(float)sys_info.totalram));
+    memUsage = 100.00-(100.00*((float)sys_info.freeram/(float)sys_info.totalram));
 }
 void memWrite(){
-    printf("{");
-    if(10 > memUsage){
-       printf("\"color\":\"#0000aa\",");
-    }else if(20 > memUsage){
-       printf("\"color\":\"#0000ff\",");
-    }else if(40 > memUsage){
-       printf("\"color\":\"#00ff00\",");
-    }else if(60 > memUsage){
-       printf("\"color\":\"#ffff00\",");
-    }else if(85 > memUsage){
-       printf("\"color\":\"#ff9900\",");
-    }else{
-       printf("\"color\":\"#ff0000\",");
-    }
-    printf("\"full_text\":");
-    if(10 > memUsage){
-       printf("\"▁  %.2f\%▁\"", memUsage);
-    }else if(20 > memUsage){
-       printf("\"▂ %.2f\% ▂\"", memUsage);
-    }else if(40 > memUsage){
-       printf("\"▃ %.2f\% ▃\"", memUsage);
-    }else if(60 > memUsage){
-       printf("\"▄ %.2f\% ▄\"", memUsage);
-    }else if(80 > memUsage){
-       printf("\"▅ %.2f\% ▅\"", memUsage);
-    }else if(90 > memUsage){
-       printf("\"▆ %.2f\% ▆\"", memUsage);
-    }else if(100 > memUsage){
-       printf("\"▇ %.2f\% ▇\"", memUsage);
-    }else if(memUsage >= 100.00){
-       printf("\"█%.2f\% █\"", memUsage);
-    }else{
-       printf("\"▁  %.2f\%▁\"", memUsage);
-    }
-    printf("}");
-
+    printPercentage("memory" ,memUsage);
 }
 
 void dateTime(){
     printf("{");
-    moveIconI++;
-    if(moveIconI==4)
-        moveIconI=0;
     rawtime = time(NULL);
     if (rawtime == -1) {
         printf("Err");
@@ -152,14 +143,14 @@ void dateTime(){
         printf("Err");
     }
     printf("\"full_text\":");
-    printf("\" %s %02d:%02d:%02d %s \",", moveIcons[moveIconI], ptm->tm_hour, ptm->tm_min, ptm->tm_sec, moveIcons[moveIconI]);
-    printf("\"color\":\"#ffffff\"");
+    printf("\"%04d-%02d-%02d %02d:%02d:%02d\",", ptm->tm_year+1900, ptm->tm_mon+1, ptm->tm_mday, ptm->tm_hour, ptm->tm_min, ptm->tm_sec);
+    printf("\"color\":\"#ffffff\",\"separator\": false");
     printf("}");
 }
 
 
 void tempDetect(){
-    fpf = fopen("/sys/class/hwmon/hwmon4/temp2_input", "r");
+    fpf = fopen(tempFile, "r");
     if((fpf == NULL)){
         printf("Err");
     }else{
@@ -171,25 +162,25 @@ void tempDetect(){
 
 void tempWrite(){
     printf("{");
-        if ( (float) 50 > tempCurrent ){
+        if ( 50 > tempCurrent ){
             printf("\"color\":\"#00ff00\",");
-        } else if ( (float) 55 > tempCurrent ){
+        } else if ( 55 > tempCurrent ){
             printf("\"color\":\"#ffff00\",");
-        } else if ( (float) 60 > tempCurrent ){
+        } else if ( 60 > tempCurrent ){
             printf("\"color\":\"#ff9900\",");
         }else{
             printf("\"color\":\"#ff0000\",");
         }
         printf("\"full_text\":\"");
-        printf("%.2f℃", tempCurrent);
+        printf("  %.2f ℃  ", tempCurrent);
         printf("\"");
 
     printf("}");
 }
 
 void batteryDetect(){
-    fpf = fopen("/sys/class/power_supply/BAT0/charge_full", "r");
-    fpn = fopen("/sys/class/power_supply/BAT0/charge_now", "r");
+    fpf = fopen(batteryFullFile, "r");
+    fpn = fopen(batteryNowFile, "r");
     if((fpf == NULL) && (fpn == NULL)){
         batteryCharge = -1.00;
     }else{
@@ -216,10 +207,10 @@ void batteryWrite(){
     printf("%.2f\%\"", batteryCharge);
     printf("}");
 }
-
 int main(){
     printf("{\"version\": 1}\n[\n");
     while(out == 0){
+        matrixTimer();
         batteryDetect();
         cpuDetect();
         tempDetect();
@@ -233,10 +224,14 @@ int main(){
         printf(",");
         tempWrite();
         printf(",");
+        matrix();
+        printf(","); 
         dateTime();
+        printf(",");
+        matrix();
         printf("],\n");
         fflush(stdout);
-        usleep(100000);
+        usleep(50000);
     }
 }
 
